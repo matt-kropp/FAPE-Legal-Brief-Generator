@@ -31,13 +31,14 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Create database tables
+# Drop and recreate database tables
 with app.app_context():
     try:
-        db.create_all()
-        logger.info("Database tables created successfully")
+        db.drop_all()  # Drop existing tables
+        db.create_all()  # Create new tables
+        logger.info("Database tables dropped and recreated successfully")
     except Exception as e:
-        logger.error(f"Error creating database tables: {e}")
+        logger.error(f"Error managing database tables: {e}")
         raise
 
 @login_manager.user_loader
