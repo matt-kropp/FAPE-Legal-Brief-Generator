@@ -1,0 +1,25 @@
+/* Import Bootstrap dark theme */
+@import 'https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css';
+
+/* Additional global styles */
+body {
+  min-height: 100vh;
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+}
+
+.container {
+  padding-top: 2rem;
+}
+
+.card {
+  margin-bottom: 1rem;
+}
+
+.alert {
+  margin-bottom: 1rem;
+}
+
+.btn-group {
+  gap: 0.5rem;
+}
