@@ -256,6 +256,71 @@ def api_current_project():
         }
     })
 
+@app.route('/api/projects/<int:project_id>/process', methods=['POST'])
+@login_required
+def api_process_project(project_id):
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+            
+        # Get outline content
+        outline_doc = Document.query.filter_by(
+            project_id=project_id,
+            file_type='outline'
+        ).first()
+        if not outline_doc:
+            return jsonify({'success': False, 'message': 'Outline document not found'}), 404
+            
+        outline_content = get_file_content(current_user.id, project_id, outline_doc.filename)
+        if not outline_content:
+            return jsonify({'success': False, 'message': 'Could not read outline content'}), 500
+            
+        # Process outline to create timeline
+        timeline_content = process_outline(outline_content)
+        
+        # Get supporting documents content
+        supporting_docs = Document.query.filter_by(
+            project_id=project_id,
+            file_type='supporting'
+        ).all()
+        
+        pdf_contents = []
+        for doc in supporting_docs:
+            content = get_file_content(current_user.id, project_id, doc.filename)
+            if content:
+                pdf_contents.append(content)
+                
+        # Generate narrative using GPT-4
+        narrative_content = generate_narrative(timeline_content, pdf_contents)
+        
+        # Save output
+        output = Output.query.filter_by(project_id=project_id).first()
+        if output:
+            output.timeline_content = timeline_content
+            output.narrative_content = narrative_content
+        else:
+            output = Output(
+                project_id=project_id,
+                timeline_content=timeline_content,
+                narrative_content=narrative_content
+            )
+            db.session.add(output)
+            
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'output': {
+                'timeline_content': timeline_content,
+                'narrative_content': narrative_content
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # Serve React App
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
