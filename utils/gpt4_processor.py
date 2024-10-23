@@ -5,11 +5,14 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 def summarize_text(text):
+    if not text.strip():
+        return "No readable text content found in document."
+        
     prompt = f"Summarize the following text, extracting key events and dates:\n\n{text}"
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500
         )
@@ -24,8 +27,12 @@ def generate_narrative(timeline_content, pdf_contents):
         # First, summarize all PDF contents
         summaries = []
         for pdf_content in pdf_contents:
-            summary = summarize_text(pdf_content.decode('utf-8'))
-            summaries.append(summary)
+            # Extract text from PDF content
+            from utils.pdf_processor import extract_text_from_pdf
+            text = extract_text_from_pdf(pdf_content)
+            if text.strip():
+                summary = summarize_text(text)
+                summaries.append(summary)
         
         # Combine timeline and summaries for narrative generation
         combined_content = f"Timeline:\n{timeline_content}\n\nSupporting Documents:\n"
@@ -35,7 +42,7 @@ def generate_narrative(timeline_content, pdf_contents):
         prompt = f"Generate a coherent legal brief narrative based on the following timeline and supporting documents:\n\n{combined_content}\n\nWrite a clear and professional narrative that incorporates all relevant information chronologically."
         
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=2000
         )
@@ -43,4 +50,4 @@ def generate_narrative(timeline_content, pdf_contents):
         return narrative
     except Exception as e:
         print(f"Error generating narrative: {str(e)}")
-        return "Error generating narrative"
+        return f"Error generating narrative: {str(e)}"
