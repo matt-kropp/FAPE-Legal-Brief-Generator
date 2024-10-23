@@ -80,7 +80,7 @@ def api_projects():
             data = request.get_json()
             if not data or 'name' not in data:
                 return jsonify({'success': False, 'message': 'Project name is required'}), 400
-                
+            
             project = Project(
                 name=data['name'],
                 user_id=current_user.id
@@ -126,6 +126,113 @@ def api_projects():
         'active_projects': [project_to_dict(p) for p in active_projects],
         'archived_projects': [project_to_dict(p) for p in archived_projects]
     })
+
+@app.route('/api/projects/<int:project_id>/archive', methods=['POST'])
+@login_required
+def api_archive_project(project_id):
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        
+        project.archived = True
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/projects/<int:project_id>/unarchive', methods=['POST'])
+@login_required
+def api_unarchive_project(project_id):
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        
+        project.archived = False
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/projects/<int:project_id>/upload_outline', methods=['POST'])
+@login_required
+def api_upload_outline(project_id):
+    if 'outline' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+    
+    file = request.files['outline']
+    if not file.filename:
+        return jsonify({'success': False, 'message': 'No file selected'}), 400
+    
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        
+        filename = secure_filename(file.filename)
+        save_uploaded_file(file, filename, current_user.id, project_id)
+        
+        document = Document(
+            project_id=project_id,
+            filename=filename,
+            file_type='outline'
+        )
+        db.session.add(document)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'document': {
+                'id': document.id,
+                'filename': document.filename,
+                'file_type': document.file_type
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/projects/<int:project_id>/upload_documents', methods=['POST'])
+@login_required
+def api_upload_documents(project_id):
+    if 'documents' not in request.files:
+        return jsonify({'success': False, 'message': 'No files uploaded'}), 400
+    
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        
+        documents = []
+        files = request.files.getlist('documents')
+        
+        for file in files:
+            if file.filename:
+                filename = secure_filename(file.filename)
+                save_uploaded_file(file, filename, current_user.id, project_id)
+                
+                document = Document(
+                    project_id=project_id,
+                    filename=filename,
+                    file_type='supporting'
+                )
+                db.session.add(document)
+                documents.append({
+                    'filename': filename,
+                    'file_type': 'supporting'
+                })
+        
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'documents': documents
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/current_project')
 @login_required

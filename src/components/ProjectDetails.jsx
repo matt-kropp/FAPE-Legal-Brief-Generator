@@ -30,8 +30,10 @@ function ProjectDetails() {
     e.preventDefault()
     try {
       const response = await axios.post('/api/projects', { name: projectName })
-      setProject(response.data.project)
-      setProjectName('')
+      if (response.data.success) {
+        setProject(response.data.project)
+        setProjectName('')
+      }
     } catch (error) {
       console.error('Error creating project:', error)
     }
@@ -45,7 +47,15 @@ function ProjectDetails() {
     formData.append('outline', file)
 
     try {
-      await axios.post(`/api/projects/${project.id}/upload_outline`, formData)
+      const response = await axios.post(
+        `/api/projects/${project.id}/upload_outline`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
       fetchCurrentProject()
     } catch (error) {
       console.error('Error uploading outline:', error)
@@ -62,7 +72,15 @@ function ProjectDetails() {
     })
 
     try {
-      await axios.post(`/api/projects/${project.id}/upload_documents`, formData)
+      const response = await axios.post(
+        `/api/projects/${project.id}/upload_documents`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
       fetchCurrentProject()
     } catch (error) {
       console.error('Error uploading documents:', error)
