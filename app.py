@@ -78,12 +78,16 @@ def api_projects():
     if request.method == 'POST':
         try:
             data = request.get_json()
+            if not data or 'name' not in data:
+                return jsonify({'success': False, 'message': 'Project name is required'}), 400
+                
             project = Project(
                 name=data['name'],
                 user_id=current_user.id
             )
             db.session.add(project)
             db.session.commit()
+            
             return jsonify({
                 'success': True,
                 'project': {
