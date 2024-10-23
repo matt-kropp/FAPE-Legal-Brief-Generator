@@ -4,6 +4,8 @@ import Login from './components/Login'
 import Register from './components/Register'
 import Projects from './components/Projects'
 import ProjectDetails from './components/ProjectDetails'
+import Timeline from './components/Timeline'
+import Narrative from './components/Narrative'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import './App.css'
 
@@ -23,6 +25,22 @@ function App() {
           element={
             <PrivateRoute>
               <Projects />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/view/timeline/:projectId"
+          element={
+            <PrivateRoute>
+              <Timeline />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/view/narrative/:projectId"
+          element={
+            <PrivateRoute>
+              <Narrative />
             </PrivateRoute>
           }
         />

@@ -6,8 +6,8 @@ import axios from 'axios'
 function ProjectDetails() {
   const [project, setProject] = useState(null)
   const [projectName, setProjectName] = useState('')
-  const [outline, setOutline] = useState(null)
-  const [documents, setDocuments] = useState([])
+  const [error, setError] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
   const navigate = useNavigate()
   const { logout } = useAuth()
 
@@ -23,19 +23,28 @@ function ProjectDetails() {
       }
     } catch (error) {
       console.error('Error fetching current project:', error)
+      setError('Error fetching project details')
     }
   }
 
   const handleCreateProject = async (e) => {
     e.preventDefault()
+    setError('')
+    
     try {
-      const response = await axios.post('/api/projects', { name: projectName })
+      const response = await axios.post('/api/projects', { 
+        name: projectName 
+      })
+      
       if (response.data.success) {
         setProject(response.data.project)
         setProjectName('')
+      } else {
+        setError('Failed to create project')
       }
     } catch (error) {
       console.error('Error creating project:', error)
+      setError(error.response?.data?.message || 'Error creating project')
     }
   }
 
@@ -47,7 +56,7 @@ function ProjectDetails() {
     formData.append('outline', file)
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `/api/projects/${project.id}/upload_outline`,
         formData,
         {
@@ -59,6 +68,7 @@ function ProjectDetails() {
       fetchCurrentProject()
     } catch (error) {
       console.error('Error uploading outline:', error)
+      setError('Error uploading outline')
     }
   }
 
@@ -72,7 +82,7 @@ function ProjectDetails() {
     })
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `/api/projects/${project.id}/upload_documents`,
         formData,
         {
@@ -84,15 +94,26 @@ function ProjectDetails() {
       fetchCurrentProject()
     } catch (error) {
       console.error('Error uploading documents:', error)
+      setError('Error uploading documents')
     }
   }
 
   const handleProcessProject = async () => {
+    setIsProcessing(true)
+    setError('')
+    
     try {
-      await axios.post(`/api/projects/${project.id}/process`)
-      fetchCurrentProject()
+      const response = await axios.post(`/api/projects/${project.id}/process`)
+      if (response.data.success) {
+        await fetchCurrentProject()
+      } else {
+        setError('Failed to process project')
+      }
     } catch (error) {
       console.error('Error processing project:', error)
+      setError(error.response?.data?.message || 'Error processing project')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -105,6 +126,13 @@ function ProjectDetails() {
           <button onClick={logout} className="btn btn-secondary">Logout</button>
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError('')} aria-label="Close"></button>
+        </div>
+      )}
 
       {!project ? (
         <div className="card mb-4">
@@ -188,21 +216,32 @@ function ProjectDetails() {
               <div className="mt-4">
                 <h6>Generated Content:</h6>
                 <div className="btn-group">
-                  <button onClick={() => window.location.href = `/view/timeline/${project.id}`} className="btn btn-info">
+                  <button 
+                    onClick={() => navigate(`/view/timeline/${project.id}`)} 
+                    className="btn btn-info me-2"
+                  >
                     View Timeline
                   </button>
-                  <button onClick={() => window.location.href = `/view/narrative/${project.id}`} className="btn btn-info">
+                  <button 
+                    onClick={() => navigate(`/view/narrative/${project.id}`)} 
+                    className="btn btn-info"
+                  >
                     View Narrative
                   </button>
                 </div>
               </div>
             )}
 
-            {project.documents && project.documents.some(doc => doc.file_type === 'outline') &&
+            {project.documents && 
+             project.documents.some(doc => doc.file_type === 'outline') &&
              project.documents.some(doc => doc.file_type === 'supporting') && (
               <div className="mt-4">
-                <button onClick={handleProcessProject} className="btn btn-success">
-                  Process Project
+                <button 
+                  onClick={handleProcessProject} 
+                  className="btn btn-success"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Process Project'}
                 </button>
               </div>
             )}
