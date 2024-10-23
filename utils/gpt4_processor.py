@@ -19,7 +19,7 @@ def summarize_text(text):
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4",  # Changed from gpt-4o-mini to gpt-4
             messages=[{"role": "user", "content": prompt}]
         )
         summary = response.choices[0].message.content
@@ -59,7 +59,7 @@ def generate_narrative(timeline_content, pdf_contents):
         Write a clear and professional narrative that incorporates all relevant information chronologically."""
         
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",  # Changed from gpt-4o to gpt-4
             messages=[{"role": "user", "content": prompt}]
         )
         narrative = response.choices[0].message.content
