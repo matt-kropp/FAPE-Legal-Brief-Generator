@@ -9,6 +9,7 @@ from utils.pdf_processor import process_pdfs
 from utils.gpt4_processor import generate_narrative
 from sqlalchemy.exc import SQLAlchemyError
 from io import BytesIO
+import markdown
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -31,10 +32,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Temporarily add db.drop_all() to recreate tables with the new schema
+# Create database tables
 with app.app_context():
-    db.drop_all()  # This will delete existing data
-    db.create_all()  # This will create tables with the new schema
+    db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -361,9 +361,12 @@ def view_timeline(project_id):
         flash('Timeline not found')
         return redirect(url_for('projects'))
     
+    # Convert markdown to HTML
+    timeline_html = markdown.markdown(output.timeline_content)
+    
     return render_template('timeline.html', 
                          project=project,
-                         timeline_content=output.timeline_content)
+                         timeline_content=timeline_html)
 
 @app.route('/view/narrative/<int:project_id>')
 @login_required
@@ -378,9 +381,12 @@ def view_narrative(project_id):
         flash('Narrative not found')
         return redirect(url_for('projects'))
     
+    # Convert markdown to HTML
+    narrative_html = markdown.markdown(output.narrative_content)
+    
     return render_template('narrative.html',
                          project=project,
-                         narrative_content=output.narrative_content)
+                         narrative_content=narrative_html)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

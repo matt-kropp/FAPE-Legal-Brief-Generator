@@ -8,7 +8,14 @@ def summarize_text(text):
     if not text.strip():
         return "No readable text content found in document."
         
-    prompt = f"Summarize the following text, extracting key events and dates:\n\n{text}"
+    prompt = f"""Summarize the following text, extracting key events and dates. Format the output in markdown:
+    - Use '##' for main sections
+    - Use bullet points for events
+    - Use bold text for dates
+    - Use italics for important names or terms
+    
+    Text to summarize:
+    {text}"""
     
     try:
         response = openai_client.chat.completions.create(
@@ -39,7 +46,18 @@ def generate_narrative(timeline_content, pdf_contents):
         for i, summary in enumerate(summaries, 1):
             combined_content += f"\nDocument {i}:\n{summary}\n"
         
-        prompt = f"Generate a coherent legal brief narrative based on the following timeline and supporting documents:\n\n{combined_content}\n\nWrite a clear and professional narrative that incorporates all relevant information chronologically."
+        prompt = f"""Generate a coherent legal brief narrative based on the following timeline and supporting documents. Format the output in markdown:
+        - Use '##' for main sections (Background, Analysis, Conclusion)
+        - Use '###' for subsections
+        - Use bullet points for key events
+        - Use bold text for dates and important terms
+        - Use italics for case citations or party names
+        - Use blockquotes for direct quotes from documents
+        
+        Content to process:
+        {combined_content}
+        
+        Write a clear and professional narrative that incorporates all relevant information chronologically."""
         
         response = openai_client.chat.completions.create(
             model="gpt-4",

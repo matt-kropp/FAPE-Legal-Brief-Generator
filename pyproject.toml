@@ -16,4 +16,5 @@ dependencies = [
     "werkzeug",
     "replit-object-storage>=1.0.2",
     "sqlalchemy>=2.0.36",
+    "markdown>=3.7",
 ]
