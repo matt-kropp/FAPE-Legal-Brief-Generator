@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 function Timeline() {
   const [timelineContent, setTimelineContent] = useState('');
   const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -17,13 +19,30 @@ function Timeline() {
 
   const fetchTimelineContent = async () => {
     try {
+      setLoading(true);
+      setError('');
       const response = await axios.get(`/api/projects/${projectId}/timeline`);
       setTimelineContent(response.data.timeline_content);
       setProject(response.data.project);
     } catch (error) {
       console.error('Error fetching timeline:', error);
+      setError(error.response?.data?.message || 'Error loading timeline');
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="container mt-5">
+        <div className="text-center">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-5">
@@ -36,9 +55,15 @@ function Timeline() {
         </div>
       </div>
 
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
       <div className="card">
         <div className="card-body markdown-content">
-          <ReactMarkdown>{timelineContent}</ReactMarkdown>
+          <ReactMarkdown>{timelineContent || 'No timeline content available'}</ReactMarkdown>
         </div>
       </div>
     </div>

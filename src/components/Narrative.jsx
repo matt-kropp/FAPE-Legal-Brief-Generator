@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 function Narrative() {
   const [narrativeContent, setNarrativeContent] = useState('');
   const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -17,13 +19,30 @@ function Narrative() {
 
   const fetchNarrativeContent = async () => {
     try {
+      setLoading(true);
+      setError('');
       const response = await axios.get(`/api/projects/${projectId}/narrative`);
       setNarrativeContent(response.data.narrative_content);
       setProject(response.data.project);
     } catch (error) {
       console.error('Error fetching narrative:', error);
+      setError(error.response?.data?.message || 'Error loading narrative');
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="container mt-5">
+        <div className="text-center">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-5">
@@ -36,9 +55,15 @@ function Narrative() {
         </div>
       </div>
 
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
       <div className="card">
         <div className="card-body markdown-content">
-          <ReactMarkdown>{narrativeContent}</ReactMarkdown>
+          <ReactMarkdown>{narrativeContent || 'No narrative content available'}</ReactMarkdown>
         </div>
       </div>
     </div>
