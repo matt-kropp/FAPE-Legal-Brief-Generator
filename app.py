@@ -72,6 +72,28 @@ def check_auth():
         })
     return jsonify({'authenticated': False}), 401
 
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    try:
+        data = request.get_json()
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'success': False, 'message': 'Username already exists'}), 400
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'success': False, 'message': 'Email already exists'}), 400
+        
+        user = User()
+        user.username = data['username']
+        user.email = data['email']
+        user.set_password(data['password'])
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/projects', methods=['GET', 'POST'])
 @login_required
 def api_projects():
@@ -278,7 +300,9 @@ def api_process_project(project_id):
             
         # Process outline to create timeline
         timeline_content = process_outline(outline_content)
-        
+        if not timeline_content:
+            return jsonify({'success': False, 'message': 'Error processing outline'}), 500
+            
         # Get supporting documents content
         supporting_docs = Document.query.filter_by(
             project_id=project_id,
@@ -291,8 +315,13 @@ def api_process_project(project_id):
             if content:
                 pdf_contents.append(content)
                 
+        if not pdf_contents:
+            return jsonify({'success': False, 'message': 'No readable supporting documents found'}), 500
+                
         # Generate narrative using GPT-4
         narrative_content = generate_narrative(timeline_content, pdf_contents)
+        if not narrative_content:
+            return jsonify({'success': False, 'message': 'Error generating narrative'}), 500
         
         # Save output
         output = Output.query.filter_by(project_id=project_id).first()
@@ -319,7 +348,8 @@ def api_process_project(project_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        logger.error(f"Error processing project: {str(e)}")
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
 
 # Serve React App
 @app.route('/', defaults={'path': ''})

@@ -11,11 +11,11 @@ def get_file_content(user_id, project_id, filename):
     storage_key = generate_storage_key(user_id, project_id, filename)
     return get_from_storage(storage_key)
 
-def process_outline(user_id, project_id, outline_content):
-    """Process outline content and return timeline content"""
+def process_outline(outline_content):
     try:
         timeline_content = "# Timeline of Events\n\n"
-        for line in outline_content.decode('utf-8').splitlines():
+        content_str = outline_content.decode('utf-8')
+        for line in content_str.splitlines():
             if line.strip():
                 timeline_content += f"- {line.strip()}\n"
         return timeline_content
