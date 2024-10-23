@@ -149,6 +149,54 @@ def api_projects():
         'archived_projects': [project_to_dict(p) for p in archived_projects]
     })
 
+@app.route('/api/projects/<int:project_id>/timeline')
+@login_required
+def api_project_timeline(project_id):
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        output = Output.query.filter_by(project_id=project_id).first()
+        if not output:
+            return jsonify({'success': False, 'message': 'No output found'}), 404
+
+        return jsonify({
+            'success': True,
+            'project': {
+                'id': project.id,
+                'name': project.name
+            },
+            'timeline_content': output.timeline_content
+        })
+    except Exception as e:
+        logger.error(f"Error fetching timeline: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/projects/<int:project_id>/narrative')
+@login_required
+def api_project_narrative(project_id):
+    try:
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+        output = Output.query.filter_by(project_id=project_id).first()
+        if not output:
+            return jsonify({'success': False, 'message': 'No output found'}), 404
+
+        return jsonify({
+            'success': True,
+            'project': {
+                'id': project.id,
+                'name': project.name
+            },
+            'narrative_content': output.narrative_content
+        })
+    except Exception as e:
+        logger.error(f"Error fetching narrative: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/projects/<int:project_id>/archive', methods=['POST'])
 @login_required
 def api_archive_project(project_id):
