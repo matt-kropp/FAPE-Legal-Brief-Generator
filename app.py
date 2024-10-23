@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from models import db, User, Project, Document, Output
@@ -118,9 +118,11 @@ def index():
     
     if 'current_project_id' in session:
         current_project = Project.query.get(session['current_project_id'])
-        if current_project:
+        if current_project and not current_project.archived:
             has_outline = any(doc.file_type == 'outline' for doc in current_project.documents)
             has_documents = any(doc.file_type == 'supporting' for doc in current_project.documents)
+            session['has_outline'] = has_outline
+            session['has_documents'] = has_documents
     
     return render_template('index.html', 
                          current_project=current_project,
@@ -130,8 +132,49 @@ def index():
 @app.route('/projects')
 @login_required
 def projects():
-    user_projects = Project.query.filter_by(user_id=current_user.id).all()
-    return render_template('projects.html', projects=user_projects)
+    active_projects = Project.query.filter_by(user_id=current_user.id, archived=False).all()
+    archived_projects = Project.query.filter_by(user_id=current_user.id, archived=True).all()
+    return render_template('projects.html', active_projects=active_projects, archived_projects=archived_projects)
+
+@app.route('/archive_project/<int:project_id>', methods=['POST'])
+@login_required
+def archive_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    if project.user_id != current_user.id:
+        flash('Unauthorized access')
+        return redirect(url_for('projects'))
+    
+    try:
+        project.archived = True
+        db.session.commit()
+        if 'current_project_id' in session and session['current_project_id'] == project_id:
+            session.pop('current_project_id')
+        flash('Project archived successfully')
+    except SQLAlchemyError as e:
+        logger.error(f"Error archiving project: {e}")
+        db.session.rollback()
+        flash('Error archiving project')
+    
+    return redirect(url_for('projects'))
+
+@app.route('/unarchive_project/<int:project_id>', methods=['POST'])
+@login_required
+def unarchive_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    if project.user_id != current_user.id:
+        flash('Unauthorized access')
+        return redirect(url_for('projects'))
+    
+    try:
+        project.archived = False
+        db.session.commit()
+        flash('Project unarchived successfully')
+    except SQLAlchemyError as e:
+        logger.error(f"Error unarchiving project: {e}")
+        db.session.rollback()
+        flash('Error unarchiving project')
+    
+    return redirect(url_for('projects'))
 
 @app.route('/create_project', methods=['POST'])
 @login_required
@@ -141,6 +184,7 @@ def create_project():
         project = Project()
         project.name = project_name
         project.user_id = current_user.id
+        project.archived = False
         db.session.add(project)
         db.session.commit()
         session['current_project_id'] = project.id
@@ -158,6 +202,9 @@ def select_project(project_id):
     if project.user_id != current_user.id:
         flash('Unauthorized access')
         return redirect(url_for('projects'))
+    if project.archived:
+        flash('Cannot select archived project')
+        return redirect(url_for('projects'))
     session['current_project_id'] = project_id
     return redirect(url_for('index'))
 
@@ -165,7 +212,7 @@ def select_project(project_id):
 @login_required
 def upload_outline(project_id):
     project = Project.query.get_or_404(project_id)
-    if project.user_id != current_user.id:
+    if project.user_id != current_user.id or project.archived:
         flash('Unauthorized access')
         return redirect(url_for('index'))
     
@@ -199,7 +246,7 @@ def upload_outline(project_id):
 @login_required
 def upload_documents(project_id):
     project = Project.query.get_or_404(project_id)
-    if project.user_id != current_user.id:
+    if project.user_id != current_user.id or project.archived:
         flash('Unauthorized access')
         return redirect(url_for('index'))
     
@@ -234,7 +281,7 @@ def upload_documents(project_id):
 @login_required
 def process_project(project_id):
     project = Project.query.get_or_404(project_id)
-    if project.user_id != current_user.id:
+    if project.user_id != current_user.id or project.archived:
         flash('Unauthorized access')
         return redirect(url_for('index'))
     
@@ -272,14 +319,20 @@ def process_project(project_id):
         # Generate narrative
         narrative_content = generate_narrative(timeline_content, pdf_contents)
         
-        # Save output
-        output = Output()
-        output.project_id = project_id
-        output.timeline_content = timeline_content
-        output.narrative_content = narrative_content
-        db.session.add(output)
-        db.session.commit()
+        # Save or update output
+        output = Output.query.filter_by(project_id=project_id).first()
+        if output:
+            output.timeline_content = timeline_content
+            output.narrative_content = narrative_content
+        else:
+            output = Output(
+                project_id=project_id,
+                timeline_content=timeline_content,
+                narrative_content=narrative_content
+            )
+            db.session.add(output)
         
+        db.session.commit()
         flash('Project processed successfully')
     except Exception as e:
         logger.error(f"Error processing project: {e}")
@@ -301,7 +354,9 @@ def view_timeline(project_id):
         flash('Timeline not found')
         return redirect(url_for('projects'))
     
-    return output.timeline_content
+    return render_template('timeline.html', 
+                         project=project,
+                         timeline_content=output.timeline_content)
 
 @app.route('/view/narrative/<int:project_id>')
 @login_required
@@ -316,7 +371,9 @@ def view_narrative(project_id):
         flash('Narrative not found')
         return redirect(url_for('projects'))
     
-    return output.narrative_content
+    return render_template('narrative.html',
+                         project=project,
+                         narrative_content=output.narrative_content)
 
 if __name__ == '__main__':
     with app.app_context():

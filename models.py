@@ -31,6 +31,7 @@ class Project(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    archived = db.Column(db.Boolean, default=False)  # New field for archiving
     documents = db.relationship('Document', backref='project', lazy=True)
     output = db.relationship('Output', backref='project', uselist=False, lazy=True)
 

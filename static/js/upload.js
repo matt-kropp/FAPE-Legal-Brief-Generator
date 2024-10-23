@@ -2,7 +2,11 @@
 function handleFileUpload(formId, fileInputId) {
     const form = document.getElementById(formId);
     const fileInput = document.getElementById(fileInputId);
+    
+    if (!form || !fileInput) return; // Exit if elements don't exist
+    
     const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
     
     fileInput.addEventListener('change', function() {
         const files = this.files;
@@ -34,6 +38,9 @@ function handleFileUpload(formId, fileInputId) {
 
 // Initialize upload handlers when the document is ready
 document.addEventListener('DOMContentLoaded', function() {
-    handleFileUpload('outline-form', 'outline');
-    handleFileUpload('documents-form', 'documents');
+    // Only initialize if we're on the upload page
+    if (document.getElementById('outline-form') || document.getElementById('documents-form')) {
+        handleFileUpload('outline-form', 'outline');
+        handleFileUpload('documents-form', 'documents');
+    }
 });
