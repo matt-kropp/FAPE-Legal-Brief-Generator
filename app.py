@@ -31,8 +31,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Temporarily add db.drop_all() to recreate tables with the new schema
 with app.app_context():
-    db.create_all()
+    db.drop_all()  # This will delete existing data
+    db.create_all()  # This will create tables with the new schema
 
 @login_manager.user_loader
 def load_user(user_id):
