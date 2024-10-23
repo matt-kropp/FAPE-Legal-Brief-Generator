@@ -72,9 +72,35 @@ def check_auth():
         })
     return jsonify({'authenticated': False}), 401
 
-@app.route('/api/projects')
+@app.route('/api/projects', methods=['GET', 'POST'])
 @login_required
 def api_projects():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            project = Project(
+                name=data['name'],
+                user_id=current_user.id
+            )
+            db.session.add(project)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'project': {
+                    'id': project.id,
+                    'name': project.name,
+                    'created_at': project.created_at.isoformat(),
+                    'archived': project.archived,
+                    'documents': [],
+                    'has_output': False
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error creating project: {str(e)}")
+            db.session.rollback()
+            return jsonify({'success': False, 'message': 'Error creating project'}), 500
+
+    # GET request
     active_projects = Project.query.filter_by(user_id=current_user.id, archived=False).all()
     archived_projects = Project.query.filter_by(user_id=current_user.id, archived=True).all()
     
@@ -95,6 +121,28 @@ def api_projects():
     return jsonify({
         'active_projects': [project_to_dict(p) for p in active_projects],
         'archived_projects': [project_to_dict(p) for p in archived_projects]
+    })
+
+@app.route('/api/current_project')
+@login_required
+def api_current_project():
+    if not current_user.projects:
+        return jsonify({'project': None})
+    
+    project = current_user.projects[-1]  # Get the most recent project
+    return jsonify({
+        'project': {
+            'id': project.id,
+            'name': project.name,
+            'created_at': project.created_at.isoformat(),
+            'archived': project.archived,
+            'documents': [{
+                'id': doc.id,
+                'filename': doc.filename,
+                'file_type': doc.file_type
+            } for doc in project.documents],
+            'has_output': bool(project.output)
+        }
     })
 
 # Serve React App
