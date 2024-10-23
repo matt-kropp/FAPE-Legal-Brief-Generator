@@ -44,7 +44,7 @@
         </div>
 
         {% if current_project %}
-        <div class="card mb-4">
+        <div class="card mb-4 current-project" data-has-output="{{ 'true' if current_project.output else 'false' }}">
             <div class="card-body">
                 <h5 class="card-title">Current Project: {{ current_project.name }}</h5>
                 

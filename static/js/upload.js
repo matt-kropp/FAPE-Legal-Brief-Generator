@@ -28,16 +28,28 @@ function handleFileUpload(formId, fileInputId) {
     });
     
     form.addEventListener('submit', function(e) {
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
-        }
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
     });
 }
 
 // Initialize upload handlers when the document is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize upload handlers only if we're on a page with upload forms
-    handleFileUpload('outline-form', 'outline');
-    handleFileUpload('documents-form', 'documents');
+    try {
+        // Initialize upload handlers only if we're on a page with upload forms
+        handleFileUpload('outline-form', 'outline');
+        handleFileUpload('documents-form', 'documents');
+        
+        // Handle visibility of View Timeline and View Narrative buttons
+        const currentProject = document.querySelector('.current-project');
+        if (currentProject) {
+            const hasOutput = currentProject.dataset.hasOutput === 'true';
+            const viewButtons = document.querySelectorAll('.btn-info[href*="/view/"]');
+            viewButtons.forEach(button => {
+                button.style.display = hasOutput ? 'inline-block' : 'none';
+            });
+        }
+    } catch (error) {
+        console.warn('Some elements were not found, this is expected on pages without upload forms');
+    }
 });
