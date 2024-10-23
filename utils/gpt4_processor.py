@@ -19,21 +19,28 @@ def summarize_text(text):
         print(f"Error in GPT-4 API call: {str(e)}")
         return "Error in summarization"
 
-def generate_narrative():
+def generate_narrative(timeline_content, pdf_contents):
     try:
-        with open('timeline.md', 'r') as timeline_file:
-            timeline_content = timeline_file.read()
+        # First, summarize all PDF contents
+        summaries = []
+        for pdf_content in pdf_contents:
+            summary = summarize_text(pdf_content.decode('utf-8'))
+            summaries.append(summary)
         
-        prompt = f"Generate a coherent narrative based on the following timeline of events:\n\n{timeline_content}"
+        # Combine timeline and summaries for narrative generation
+        combined_content = f"Timeline:\n{timeline_content}\n\nSupporting Documents:\n"
+        for i, summary in enumerate(summaries, 1):
+            combined_content += f"\nDocument {i}:\n{summary}\n"
+        
+        prompt = f"Generate a coherent legal brief narrative based on the following timeline and supporting documents:\n\n{combined_content}\n\nWrite a clear and professional narrative that incorporates all relevant information chronologically."
         
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000
+            max_tokens=2000
         )
         narrative = response.choices[0].message.content
-        
-        with open('narrative.md', 'w') as narrative_file:
-            narrative_file.write(narrative)
+        return narrative
     except Exception as e:
         print(f"Error generating narrative: {str(e)}")
+        return "Error generating narrative"

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Projects - Legal Court Brief Generator</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>My Projects</h1>
+            <div>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Home</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            {% for project in projects %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ project.name }}</h5>
+                        <p class="card-text">Created: {{ project.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        
+                        <h6>Documents:</h6>
+                        <ul class="list-unstyled">
+                            {% for doc in project.documents %}
+                            <li>{{ doc.filename }} ({{ doc.file_type }})</li>
+                            {% endfor %}
+                        </ul>
+
+                        {% if project.output %}
+                        <div class="mt-3">
+                            <h6>Generated Content:</h6>
+                            <a href="{{ url_for('view_timeline', project_id=project.id) }}" class="btn btn-sm btn-info me-2">View Timeline</a>
+                            <a href="{{ url_for('view_narrative', project_id=project.id) }}" class="btn btn-sm btn-info">View Narrative</a>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <a href="{{ url_for('select_project', project_id=project.id) }}" class="btn btn-primary">Select Project</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

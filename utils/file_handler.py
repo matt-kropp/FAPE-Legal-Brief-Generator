@@ -1,21 +1,24 @@
+from utils.storage import save_to_storage, get_from_storage, generate_storage_key
 import os
 
-def process_outline():
-    input_folder = 'inputs'
-    outline_file = os.path.join(input_folder, 'outline.txt')
-    
-    if not os.path.exists(outline_file):
-        raise FileNotFoundError("outline.txt not found in the inputs folder")
-    
-    try:
-        with open(outline_file, 'r') as outline, open('timeline.md', 'w') as timeline:
-            timeline.write("# Timeline of Events\n\n")
-            for line in outline:
-                timeline.write(f"- {line.strip()}\n")
-    except Exception as e:
-        print(f"Error processing outline: {str(e)}")
+def save_uploaded_file(file, filename, user_id, project_id):
+    """Save uploaded file to Replit Object Storage"""
+    storage_key = generate_storage_key(user_id, project_id, filename)
+    return save_to_storage(file, storage_key)
 
-def save_uploaded_file(file, filename):
-    if not os.path.exists('inputs'):
-        os.makedirs('inputs')
-    file.save(os.path.join('inputs', filename))
+def get_file_content(user_id, project_id, filename):
+    """Get file content from Replit Object Storage"""
+    storage_key = generate_storage_key(user_id, project_id, filename)
+    return get_from_storage(storage_key)
+
+def process_outline(user_id, project_id, outline_content):
+    """Process outline content and return timeline content"""
+    try:
+        timeline_content = "# Timeline of Events\n\n"
+        for line in outline_content.decode('utf-8').splitlines():
+            if line.strip():
+                timeline_content += f"- {line.strip()}\n"
+        return timeline_content
+    except Exception as e:
+        print(f"Error processing outline: {e}")
+        return None

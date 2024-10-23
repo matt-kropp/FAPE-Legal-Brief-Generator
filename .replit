@@ -15,6 +15,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start Flask App"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Flask Server"
+
 [[workflows.workflow]]
 name = "Start Flask App"
 author = "agent"
@@ -27,9 +31,24 @@ task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Flask Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
+waitForPort = 5000
+
 [deployment]
-run = ["sh", "-c", "python main.py"]
+run = ["sh", "-c", "python app.py"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[objectStorage]
+defaultBucketID = "replit-objstore-8ac1716b-4c58-4c2a-b31e-aeb17a295a2a"

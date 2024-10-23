@@ -12,4 +12,6 @@ dependencies = [
     "pypdf2>=3.0.1",
     "flask-login",
     "flask-migrate",
+    "replit>=4.1.0",
+    "werkzeug",
 ]
