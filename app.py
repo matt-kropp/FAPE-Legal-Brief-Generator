@@ -31,6 +31,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+with app.app_context():
+    db.create_all()
+
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -42,7 +45,9 @@ def load_user(user_id):
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    if filename:
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return False
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -221,7 +226,7 @@ def upload_outline(project_id):
         return redirect(url_for('index'))
     
     file = request.files['outline']
-    if not file or file.filename == '':
+    if not file or not file.filename:
         flash('No selected file')
         return redirect(url_for('index'))
     
@@ -255,7 +260,7 @@ def upload_documents(project_id):
         return redirect(url_for('index'))
     
     files = request.files.getlist('documents')
-    if not files or files[0].filename == '':
+    if not files or not files[0].filename:
         flash('No selected files')
         return redirect(url_for('index'))
     
@@ -376,6 +381,4 @@ def view_narrative(project_id):
                          narrative_content=output.narrative_content)
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(host='0.0.0.0', port=5000)

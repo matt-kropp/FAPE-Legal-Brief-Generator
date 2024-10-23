@@ -10,7 +10,7 @@ function handleFileUpload(formId, fileInputId) {
     
     fileInput.addEventListener('change', function() {
         const files = this.files;
-        if (files.length > 0) {
+        if (files && files.length > 0) {
             const fileList = Array.from(files).map(file => file.name).join(', ');
             const feedback = document.createElement('div');
             feedback.className = 'mt-2 text-info';
@@ -27,8 +27,10 @@ function handleFileUpload(formId, fileInputId) {
     });
     
     form.addEventListener('submit', function(e) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+        }
         
         // Clear previous alerts
         const alerts = form.querySelectorAll('.alert');
