@@ -121,6 +121,12 @@ function ProjectDetails() {
         <h1>Legal Court Brief Generator</h1>
         <div>
           <button onClick={() => navigate('/projects')} className="btn btn-secondary me-2">My Projects</button>
+          <button 
+            onClick={() => setProject(null)} 
+            className="btn btn-secondary me-2"
+          >
+            New Project
+          </button>
           <button onClick={logout} className="btn btn-secondary">Logout</button>
         </div>
       </div>
