@@ -25,6 +25,12 @@ function ProjectDetails() {
     }
   }
 
+  const handleNewProject = () => {
+    setProject(null)
+    setProjectName('')
+    setError('')
+  }
+
   const handleCreateProject = async (e) => {
     e.preventDefault()
     setError('')
@@ -122,7 +128,7 @@ function ProjectDetails() {
         <div>
           <button onClick={() => navigate('/projects')} className="btn btn-secondary me-2">My Projects</button>
           <button 
-            onClick={() => setProject(null)} 
+            onClick={handleNewProject} 
             className="btn btn-secondary me-2"
           >
             New Project
