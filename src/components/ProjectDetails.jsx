@@ -18,9 +18,7 @@ function ProjectDetails() {
   const fetchCurrentProject = async () => {
     try {
       const response = await axios.get('/api/current_project')
-      if (response.data.project) {
-        setProject(response.data.project)
-      }
+      setProject(response.data.project)  // This will be null if no project exists
     } catch (error) {
       console.error('Error fetching current project:', error)
       setError('Error fetching project details')
@@ -134,7 +132,7 @@ function ProjectDetails() {
         </div>
       )}
 
-      {!project ? (
+      {!project && (
         <div className="card mb-4">
           <div className="card-body">
             <h5 className="card-title">Create New Project</h5>
@@ -154,7 +152,9 @@ function ProjectDetails() {
             </form>
           </div>
         </div>
-      ) : (
+      )}
+
+      {project && (
         <div className="card mb-4">
           <div className="card-body">
             <h5 className="card-title">Current Project: {project.name}</h5>
