@@ -47,7 +47,7 @@ function App() {
           }
         />
         <Route
-          path="/"
+          path="/project/:projectId"
           element={
             <PrivateRoute>
               <ProjectDetails />
