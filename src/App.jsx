@@ -7,6 +7,7 @@ import ProjectDetails from './components/ProjectDetails'
 import Timeline from './components/Timeline'
 import Narrative from './components/Narrative'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import LandingPage from './pages/LandingPage'
 import './App.css'
 
 const PrivateRoute = ({ children }) => {
@@ -18,6 +19,7 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
